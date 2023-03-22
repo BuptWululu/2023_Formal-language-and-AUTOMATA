@@ -1,17 +1,23 @@
 #include <bits/stdc++.h>
 #define N 2000
 using namespace std;
-int n; //DFA状态总数 
+int n,totans; //DFA状态总数 
 struct graph{
 	//边权信息 
 	int to;		//下一个状态 
 	int type;	//转移时的输入为0/1 
 };
+struct ANS{
+	//存储答案 
+	bool isF;	//是否为最终状态 
+	int Node;	//当前状态 
+	int sit0,sit1;	//输入0、1对应的状态 
+}ans[N];
 vector<graph> edge[N];	//NFA每个状态边的信息 
 map<set<int> ,int> id;	//状态集合对应的编号 
 map<set<int> ,bool> vis;	//是否被遍历过 
 queue<set<int> > line;	//队列中存储还未被遍历过的状态 
-char ch[100]; //用来消耗第一行输入 
+char ch; //用来消耗第一行输入 
 bool F[N];	//存储每个点是否为最终状态 
 int GetId(string s) //将q开头的字符串转为数字 
 {
@@ -79,7 +85,7 @@ bool find_F(set<int> now) //判断状态集合中是否有最终状态
 	}
 	return 0;
 }
-void Print(set<int> now,set<int> Next,int type) //输出函数 
+void GetAns(set<int> now,set<int> Next,int type) //将答案存入Ans结构体数组中 
 {
 	set<int>::iterator it;
 	int Now_id,Next_id;
@@ -96,21 +102,21 @@ void Print(set<int> now,set<int> Next,int type) //输出函数
 	
 	if(type==1)
 	{
+		totans++;
 		if(find_F(now))
-		{
-			printf("(e)");
-		}
+			ans[totans].isF=1;
+		ans[totans].Node=Now_id;
 		if(Next.empty())
-		printf("q%d\tN\t",Now_id);
+			ans[totans].sit0=-1;
 		else
-		printf("q%d\tq%d\t",Now_id,Next_id);
+			ans[totans].sit0=Next_id;
 	}
 	else
 	{
 		if(Next.empty())
-		printf("N\n");
+			ans[totans].sit1=-1;
 		else
-		printf("q%d\n",Next_id);
+			ans[totans].sit1=Next_id;
 	}
 	return ;
 }
@@ -138,14 +144,40 @@ void find_next(set<int> now,int type)
 		id[Next]=++n;
 	}
 	//输出 
-	Print(now,Next,type);
+	GetAns(now,Next,type);
 	return ;
+}
+bool cmp(ANS a,ANS b)	//根据状态序号排序 
+{
+	return a.Node<b.Node;
+}
+void print()	//输出 
+{
+	printf("\t\t0\t1\n(s)");
+	sort(ans+1,ans+1+totans,cmp);
+	for(int i=1;i<=totans;i++)
+	{
+		if(ans[i].isF)
+			printf("(e)");
+		printf("q%d\t",ans[i].Node);
+		if(ans[i].sit0==-1)
+			printf("N\t");
+		else
+			printf("q%d\t",ans[i].sit0);
+		if(ans[i].sit1==-1)
+			printf("N\n");
+		else
+			printf("q%d\n",ans[i].sit1);
+	}
 }
 int main()
 {
-	//freopen("data2.txt","r",stdin);
+	//freopen("data.txt","r",stdin);
 	//freopen("output.txt","w",stdout);
-    gets(ch);	//把第一行消耗掉 
+    ch=getchar();
+    //把第一行消耗掉 
+	while(ch!='\n')
+		ch=getchar();
     string st,aim1,aim2;
     while(cin>>st>>aim1>>aim2)
     {
@@ -154,7 +186,6 @@ int main()
         connect(GetDot(st),aim1,1);
         connect(GetDot(st),aim2,2);
     }
-    printf("\t\t0\t1\n(s)");
     set<int> now;
     now.insert(0);
 	line.push(now);
@@ -166,5 +197,6 @@ int main()
    		find_next(line.front(),2);
   		line.pop();
 	}
+	print();
     return 0;
 }
